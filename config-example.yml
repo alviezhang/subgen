@@ -1,0 +1,30 @@
+client_config:
+  uuid: myuuid
+
+nodes:
+  - name: node1
+    endpoint: node1:10086
+    region: JPN
+    relays:
+      - name: SH-JP
+        endpoint: node1-relay1:10086
+      - name: SH-HK
+        endpoint: node1-relay2:10086
+
+  - name: node2
+    endpoint: node2:10086
+    region: USA
+    relays:
+      - name: SZ-HK
+        endpoint: node2-relay1:10086
+      - name: SH-HK
+        endpoint: node2-relay2:10086
+
+  - name: node3
+    endpoint: node3:10086
+    region: JPN
+    relays:
+      - name: SH-JP
+        endpoint: node3-relay1:10086
+      - name: SH-HK
+        endpoint: node3-relay2:10086
