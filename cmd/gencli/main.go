@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/alviezhang/gensub/internal"
+	"github.com/alviezhang/subgen/internal"
 )
 
 func main() {
