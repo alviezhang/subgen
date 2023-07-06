@@ -129,13 +129,13 @@ func generateClash(clientConfig ClientConfig, nodes []Node) string {
 	var lines []string
 	for _, node := range nodes {
 		proxy := map[string]string{
-			"name":   node.Name,
-			"type":   "vmess",
-			"server": node.Addr,
-			"port":   node.Port,
-			"uuid":   clientConfig.UUID,
-			// "alterId": "0",
-			// "cipher": "auto",
+			"name":    node.Name,
+			"type":    "vmess",
+			"server":  node.Addr,
+			"port":    node.Port,
+			"uuid":    clientConfig.UUID,
+			"alterId": "0",
+			"cipher":  "auto",
 		}
 		data, _ := json.Marshal(proxy)
 		lines = append(lines, "  - "+string(data))
@@ -153,7 +153,7 @@ func Generate(filename string, subtype string) (string, error) {
 
 	config, err := loadConfig(filename, subtype)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Read file %s\n error: %s", filename))
+		return "", errors.New(fmt.Sprintf("Read file %s\n error: %s", filename, err))
 	}
 
 	return generate(*config, subtype), nil
