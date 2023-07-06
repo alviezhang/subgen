@@ -1,8 +1,11 @@
-FROM debian:12-slim
+FROM golang:1.20-alpine
 
 ENV ID=""
 ENV CONFIG=""
 ENV PORT=""
 
-COPY ./subgen /usr/local/bin
-ENTRYPOINT subgen --id $ID --config $CONFIG --port $PORT 
+RUN mkdir /workspace
+WORKDIR /workspace
+COPY .  .
+RUN go build
+ENTRYPOINT /workspace/subgen --id $ID --config $CONFIG --port $PORT 
