@@ -5,4 +5,4 @@ ENV CONFIG=""
 ENV PORT=""
 
 COPY ./subgen /usr/local/bin
-ENTRYPOINT [subgen --id $ID --config $CONFIG --port $PORT] 
+ENTRYPOINT subgen --id $ID --config $CONFIG --port $PORT 
