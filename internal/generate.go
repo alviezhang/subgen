@@ -3,43 +3,19 @@ package internal
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
+	"time"
 
+	"github.com/patrickmn/go-cache"
 	"gopkg.in/yaml.v3"
 )
 
-type Node struct {
-	Name    string `json:"ps"`
-	Addr    string `json:"add"`
-	Port    string `json:"port"`
-	Region  string `json:"-"`
-	IsRelay bool   `json:"-"`
-}
+var _cache = cache.New(5*time.Minute, 10*time.Minute)
 
-type ClientConfig struct {
-	UUID string `yaml:"uuid"`
-}
-
-type NodeConfig struct {
-	Name     string `yaml:"name"`
-	Endpoint string `yaml:"endpoint"`
-	Region   string `yaml:"region"`
-	Relays   []struct {
-		Name     string `yaml:"name"`
-		Endpoint string `yaml:"endpoint"`
-	} `yaml:"relays"`
-}
-
-type Config struct {
-	ClientConfig ClientConfig `yaml:"client_config"`
-	Nodes        []NodeConfig `yaml:"nodes"`
-}
-
-func loadConfig(path string, subType string) (*Config, error) {
-	yamlFile, err := ioutil.ReadFile(path)
+func loadConfig(path string) (*Config, error) {
+	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -54,44 +30,30 @@ func loadConfig(path string, subType string) (*Config, error) {
 	return &config, nil
 }
 
-func parseEndpoint(endpoint string) (string, string) {
-	parts := strings.Split(endpoint, ":")
-	return parts[0], parts[1]
-}
-
 func generate(config Config, subtype string) string {
-	var nodeList []Node
-	for _, nodeConfig := range config.Nodes {
-		nodeName := nodeConfig.Name
-		addr, port := parseEndpoint(nodeConfig.Endpoint)
-		nodeList = append(nodeList, Node{
-			Name:    nodeName,
-			Addr:    addr,
-			Port:    port,
-			Region:  nodeConfig.Region,
-			IsRelay: false,
-		})
-
-		for _, relayConfig := range nodeConfig.Relays {
-			addr, port := parseEndpoint(relayConfig.Endpoint)
-			nodeList = append(nodeList, Node{
-				Name:    fmt.Sprintf("%s-%s", nodeName, relayConfig.Name),
-				Addr:    addr,
-				Port:    port,
-				Region:  "",
-				IsRelay: true,
-			})
-		}
+	if data, found := _cache.Get(subtype); found {
+		fmt.Println("Use cache")
+		return data.(string)
 	}
+	nnr := NNR{token: "7b38f174-97a5-4e36-a50b-c82931b8a977"}
+	nodes, err := nnr.Generate(config.Nodes)
+
+	if err != nil {
+		panic("Failed generate nodes")
+	}
+	var generated_config string
 	switch subtype {
 	case "v2ray":
-		return generateV2Ray(config.ClientConfig, nodeList)
+		generated_config = generateV2Ray(config.ClientConfig, nodes)
 	case "quantumult":
-		return generateQuantumult(config.ClientConfig, nodeList)
+		generated_config = generateQuantumult(config.ClientConfig, nodes)
 	case "clash":
-		return generateClash(config.ClientConfig, nodeList)
+		generated_config = generateClash(config.ClientConfig, nodes)
+	default:
+		panic("Unexpected subtype: " + subtype)
 	}
-	panic("Unexpected subtype: " + subtype)
+	_cache.Set(subtype, generated_config, cache.DefaultExpiration)
+	return generated_config
 }
 
 func generateV2Ray(clientConfig ClientConfig, nodes []Node) string {
@@ -101,7 +63,7 @@ func generateV2Ray(clientConfig ClientConfig, nodes []Node) string {
 			"v":    "2",
 			"ps":   node.Name,
 			"add":  node.Addr,
-			"port": node.Port,
+			"port": fmt.Sprint(node.Port),
 			"id":   clientConfig.UUID,
 			// "aid":  "0",
 			// "scy":  "auto",
@@ -118,7 +80,7 @@ func generateV2Ray(clientConfig ClientConfig, nodes []Node) string {
 func generateQuantumult(clientConfig ClientConfig, nodes []Node) string {
 	var lines []string
 	for _, node := range nodes {
-		line := fmt.Sprintf("vmess=%s:%s, method=chacha20-ietf-poly1305, password=%s, fast-open=false, udp-relay=true, tag=%s",
+		line := fmt.Sprintf("vmess=%s:%d, method=chacha20-ietf-poly1305, password=%s, fast-open=false, udp-relay=true, tag=%s",
 			node.Addr, node.Port, clientConfig.UUID, node.Name)
 		lines = append(lines, line)
 	}
@@ -132,7 +94,7 @@ func generateClash(clientConfig ClientConfig, nodes []Node) string {
 			"name":    node.Name,
 			"type":    "vmess",
 			"server":  node.Addr,
-			"port":    node.Port,
+			"port":    fmt.Sprint(node.Port),
 			"uuid":    clientConfig.UUID,
 			"alterId": "0",
 			"cipher":  "auto",
@@ -145,15 +107,15 @@ func generateClash(clientConfig ClientConfig, nodes []Node) string {
 
 func Generate(filename string, subtype string) (string, error) {
 	if subtype != "v2ray" && subtype != "quantumult" && subtype != "clash" {
-		return "", errors.New("Invalid subtype: " + subtype)
+		return "", fmt.Errorf("invalid subtype: " + subtype)
 	}
 	if filename == "" {
-		return "", errors.New("Invalid filename: " + filename)
+		return "", fmt.Errorf("invalid filename: " + filename)
 	}
 
-	config, err := loadConfig(filename, subtype)
+	config, err := loadConfig(filename)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Read file %s\n error: %s", filename, err))
+		return "", fmt.Errorf("read file %s\n error: %s", filename, err)
 	}
 
 	return generate(*config, subtype), nil

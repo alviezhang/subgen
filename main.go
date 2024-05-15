@@ -36,6 +36,7 @@ func main() {
 
 		result, err := internal.Generate(*filename, subType)
 		if err != nil {
+			fmt.Println(err)
 			http.Error(w, "Generate failed", 500)
 		}
 		w.Write([]byte(result))
