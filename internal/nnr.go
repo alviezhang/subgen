@@ -247,13 +247,17 @@ func (nnr *NNR) Generate(nodeConfigList []NodeConfig) ([]Node, error) {
 
 	// build a map for rules
 	rulesMap := make(map[string]interface{})
-	rulesStatus := make(map[string]bool)
 	for _, rule := range rules.Data.([]interface{}) {
 		sid := rule.(map[string]interface{})["sid"].(string)
 		remote := rule.(map[string]interface{})["remote"].(string)
 		key := fmt.Sprintf("%s-%s", sid, remote)
-		rulesMap[key] = rule
-		rulesStatus[key] = true
+		if _, ok := rulesMap[key]; !ok {
+			rulesMap[key] = rule
+		} else {
+			rid := rule.(map[string]interface{})["rid"].(string)
+			deleteRule(nnr.token, rid)
+			fmt.Printf("rule: %s duplicated deleted success\n", rid)
+		}
 	}
 
 	// iterate the nodes
