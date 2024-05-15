@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/patrickmn/go-cache"
@@ -13,6 +14,7 @@ import (
 )
 
 var _cache = cache.New(5*time.Minute, 10*time.Minute)
+var _lock sync.Mutex
 
 func loadConfig(path string) (*Config, error) {
 	yamlFile, err := os.ReadFile(path)
@@ -31,6 +33,10 @@ func loadConfig(path string) (*Config, error) {
 }
 
 func generate(config Config, subtype string) string {
+	_lock.Lock()
+	// 确保在函数退出时解锁
+	defer _lock.Unlock()
+
 	if data, found := _cache.Get(subtype); found {
 		fmt.Println("Use cache")
 		return data.(string)
