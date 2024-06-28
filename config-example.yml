@@ -3,9 +3,11 @@ client_config:
 
 nodes:
   - name: hhh
-    endpoint: hhh.example.com:10000
+    host: hhh.example.com
+    port: 10000
     region: HKG
 
   - name: jjj
-    endpoint: jjj.example.com:10000
+    host: jjj.example.com
+    port: 10000
     region: JPN

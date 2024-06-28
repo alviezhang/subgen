@@ -45,19 +45,16 @@ func TestGenerate(t *testing.T) {
 
 	origin_nodes := []NodeConfig{
 		{
-			Name:     "ch",
-			Endpoint: "ch.cloud.i.alvie.net:10010",
-			Region:   "HKG",
+			Name:   "ch",
+			Host:   "ch.cloud.i.alvie.net",
+			Port:   10010,
+			Region: "HKG",
 		},
 		{
-			Name:     "coe0",
-			Endpoint: "coe.cloud.i.alvie.net:10010",
-			Region:   "JPN",
-		},
-		{
-			Name:     "coe1",
-			Endpoint: "cot.cloud.i.alvie.net:10010",
-			Region:   "JPN",
+			Name:   "coe0",
+			Host:   "coe.cloud.i.alvie.net",
+			Port:   10010,
+			Region: "JPN",
 		},
 	}
 
