@@ -265,9 +265,6 @@ func (nnr *NNR) Generate(nodeConfigList []NodeConfig) ([]Node, error) {
 		for _, server := range servers.Data.([]interface{}) {
 			_server := server.(map[string]interface{})
 
-			if _server["mf"].(float64) > 5.0 {
-				continue
-			}
 			// build rule name
 			ruleName := fmt.Sprintf("%s-%s-%s", node.Region, node.Name, _server["name"].(string))
 			key := fmt.Sprintf("%s-%s", _server["sid"].(string), node.Addr)
